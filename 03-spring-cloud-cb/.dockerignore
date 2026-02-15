@@ -1,0 +1,4 @@
+build/
+.gradle/
+src/test/
+k8s/

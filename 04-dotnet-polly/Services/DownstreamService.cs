@@ -9,17 +9,20 @@ public class DownstreamService
     private readonly ResiliencePipelineProvider<string> _pipelineProvider;
     private readonly CircuitBreakerTracker _tracker;
     private readonly ILogger<DownstreamService> _logger;
+    private readonly string _downstreamUrl;
 
     public DownstreamService(
         IHttpClientFactory httpClientFactory,
         ResiliencePipelineProvider<string> pipelineProvider,
         CircuitBreakerTracker tracker,
-        ILogger<DownstreamService> logger)
+        ILogger<DownstreamService> logger,
+        IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
         _pipelineProvider = pipelineProvider;
         _tracker = tracker;
         _logger = logger;
+        _downstreamUrl = configuration["DownstreamUrl"] ?? "http://localhost:8080";
     }
 
     /// <summary>
@@ -145,7 +148,7 @@ public class DownstreamService
                 _logger.LogInformation("[Generic] Executing operation...");
 
                 // 模擬非 HTTP 操作 (例如 DB query)
-                using var client = new HttpClient { BaseAddress = new Uri("http://flaky-service/") };
+                using var client = new HttpClient { BaseAddress = new Uri(_downstreamUrl) };
                 client.Timeout = TimeSpan.FromSeconds(5);
                 var response = await client.GetStringAsync("/", ct);
                 return response;

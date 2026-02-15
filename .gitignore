@@ -28,6 +28,8 @@ __pycache__/
 *.egg-info/
 dist/
 *.egg
+.venv/
+.pytest_cache/
 
 # === IDE ===
 .idea/

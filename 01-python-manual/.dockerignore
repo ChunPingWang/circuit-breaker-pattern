@@ -1,0 +1,7 @@
+tests/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+requirements-test.txt
+k8s/

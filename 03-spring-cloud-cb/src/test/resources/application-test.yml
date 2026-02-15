@@ -1,0 +1,48 @@
+resilience4j:
+  circuitbreaker:
+    configs:
+      shared:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 3
+        minimumNumberOfCalls: 2
+        failureRateThreshold: 50
+        waitDurationInOpenState: 2s
+        permittedNumberOfCallsInHalfOpenState: 1
+        automaticTransitionFromOpenToHalfOpenEnabled: false
+        recordExceptions:
+          - java.lang.Exception
+      strict:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 3
+        minimumNumberOfCalls: 2
+        failureRateThreshold: 40
+        waitDurationInOpenState: 2s
+        permittedNumberOfCallsInHalfOpenState: 1
+        automaticTransitionFromOpenToHalfOpenEnabled: false
+    instances:
+      downstreamService:
+        baseConfig: shared
+      criticalService:
+        baseConfig: strict
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+        cancelRunningFuture: true
+    instances:
+      downstreamService:
+        baseConfig: default
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 1
+        waitDuration: 100ms
+        retryExceptions:
+          - java.io.IOException
+    instances:
+      downstreamService:
+        baseConfig: default

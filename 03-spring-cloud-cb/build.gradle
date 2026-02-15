@@ -39,4 +39,11 @@ dependencies {
 
     // WebClient for reactive HTTP calls
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.wiremock:wiremock-standalone:3.5.4'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }

@@ -1,6 +1,9 @@
 server:
   port: 8080
 
+downstream:
+  url: ${DOWNSTREAM_URL:http://localhost:8080}
+
 spring:
   application:
     name: circuit-breaker-demo

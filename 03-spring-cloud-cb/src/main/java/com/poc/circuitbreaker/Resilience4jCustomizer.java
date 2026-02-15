@@ -6,6 +6,7 @@ import io.github.resilience4j.circuitbreaker.event.CircuitBreakerOnStateTransiti
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +20,9 @@ public class Resilience4jCustomizer {
 
     private final CircuitBreakerRegistry circuitBreakerRegistry;
 
+    @Value("${downstream.url}")
+    private String downstreamUrl;
+
     public Resilience4jCustomizer(CircuitBreakerRegistry circuitBreakerRegistry) {
         this.circuitBreakerRegistry = circuitBreakerRegistry;
     }
@@ -29,7 +33,7 @@ public class Resilience4jCustomizer {
     @Bean
     public RestClient restClient() {
         return RestClient.builder()
-                .baseUrl("http://flaky-service")
+                .baseUrl(downstreamUrl)
                 .build();
     }
 

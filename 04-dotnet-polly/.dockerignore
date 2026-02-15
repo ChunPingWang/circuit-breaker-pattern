@@ -1,0 +1,4 @@
+bin/
+obj/
+CircuitBreakerDemo.Tests/
+k8s/

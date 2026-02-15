@@ -59,7 +59,7 @@ public class ApiController {
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("sliding_window_size", cb.getCircuitBreakerConfig().getSlidingWindowSize());
         config.put("failure_rate_threshold", cb.getCircuitBreakerConfig().getFailureRateThreshold());
-        config.put("wait_duration_in_open_state", cb.getCircuitBreakerConfig().getWaitDurationInOpenState().getSeconds() + "s");
+        config.put("wait_duration_in_open_state", cb.getCircuitBreakerConfig().getWaitIntervalFunctionInOpenState().apply(1) + "ms");
         config.put("permitted_calls_in_half_open", cb.getCircuitBreakerConfig().getPermittedNumberOfCallsInHalfOpenState());
 
         status.put("config", config);

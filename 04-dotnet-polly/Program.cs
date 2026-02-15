@@ -7,6 +7,8 @@ using Polly.Timeout;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var downstreamUrl = builder.Configuration["DownstreamUrl"] ?? "http://localhost:8080";
+
 // ==============================================
 //  方式 1: Microsoft.Extensions.Http.Resilience
 //  (標準 Resilience Handler — 推薦做法)
@@ -14,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddHttpClient("DownstreamStandard", client =>
     {
-        client.BaseAddress = new Uri("http://flaky-service/");
+        client.BaseAddress = new Uri(downstreamUrl);
         client.Timeout = TimeSpan.FromSeconds(5);
     })
     .AddStandardResilienceHandler(options =>
@@ -51,7 +53,7 @@ builder.Services
 builder.Services
     .AddHttpClient("DownstreamCustom", client =>
     {
-        client.BaseAddress = new Uri("http://flaky-service/");
+        client.BaseAddress = new Uri(downstreamUrl);
         client.Timeout = TimeSpan.FromSeconds(5);
     })
     .AddResilienceHandler("custom-pipeline", pipelineBuilder =>
@@ -140,7 +142,7 @@ builder.Services.AddScoped<DownstreamService>();
 
 // Health Checks
 builder.Services.AddHealthChecks()
-    .AddUrlGroup(new Uri("http://flaky-service/health"), "downstream-service");
+    .AddUrlGroup(new Uri($"{downstreamUrl}/health"), "downstream-service");
 
 var app = builder.Build();
 
@@ -184,3 +186,5 @@ Console.WriteLine("  Polly v8 + Microsoft.Extensions.Http.Resilience");
 Console.WriteLine("============================================");
 
 app.Run();
+
+public partial class Program { }

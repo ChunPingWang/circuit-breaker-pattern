@@ -1,0 +1,68 @@
+services:
+  # ============================================
+  #  共用下游服務 (始終啟動)
+  # ============================================
+  flaky-service:
+    build: ./shared/flaky-service
+    ports:
+      - "8080:8080"
+
+  # ============================================
+  #  01 - Python 手動實作 Circuit Breaker
+  # ============================================
+  python-cb:
+    build: ./01-python-manual
+    ports:
+      - "8081:8080"
+    environment:
+      - DOWNSTREAM_URL=http://flaky-service:8080
+    depends_on:
+      - flaky-service
+    profiles:
+      - python
+      - all
+
+  # ============================================
+  #  02 - Java Resilience4j Circuit Breaker
+  # ============================================
+  java-resilience4j-cb:
+    build: ./02-java-resilience4j
+    ports:
+      - "8082:8080"
+    environment:
+      - DOWNSTREAM_URL=http://flaky-service:8080
+    depends_on:
+      - flaky-service
+    profiles:
+      - java
+      - all
+
+  # ============================================
+  #  03 - Spring Cloud Circuit Breaker
+  # ============================================
+  spring-cloud-cb:
+    build: ./03-spring-cloud-cb
+    ports:
+      - "8083:8080"
+    environment:
+      - DOWNSTREAM_URL=http://flaky-service:8080
+    depends_on:
+      - flaky-service
+    profiles:
+      - java
+      - all
+
+  # ============================================
+  #  04 - .NET Polly Circuit Breaker
+  # ============================================
+  dotnet-polly-cb:
+    build: ./04-dotnet-polly
+    ports:
+      - "8084:8080"
+    environment:
+      - DownstreamUrl=http://flaky-service:8080
+    depends_on:
+      - flaky-service
+    profiles:
+      - dotnet
+      - all
