@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaky-service
+  labels:
+    app: flaky-service
+    poc: circuit-breaker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flaky-service
+  template:
+    metadata:
+      labels:
+        app: flaky-service
+    spec:
+      containers:
+        - name: app
+          image: flaky-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5

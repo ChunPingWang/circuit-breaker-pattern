@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-demo
+spec:
+  selector:
+    app: cb-demo
+  ports:
+    - port: 80
+      targetPort: 8080

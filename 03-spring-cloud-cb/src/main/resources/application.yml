@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: circuit-breaker-demo
+  cloud:
+    circuitbreaker:
+      resilience4j:
+        enabled: true
+        # 啟用 reactive 支援
+        enableGroupMeterFilter: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,circuitbreakerevents,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      # 共用預設設定
+      shared:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        permittedNumberOfCallsInHalfOpenState: 2
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.lang.Exception
+      # 更嚴格的設定 (用於關鍵服務)
+      strict:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 3
+        minimumNumberOfCalls: 2
+        failureRateThreshold: 40
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 1
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      downstreamService:
+        baseConfig: shared
+      criticalService:
+        baseConfig: strict
+
+  # TimeLimiter 整合 (超時控制)
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 2s
+        cancelRunningFuture: true
+    instances:
+      downstreamService:
+        baseConfig: default
+
+  # Retry 整合
+  retry:
+    configs:
+      default:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - java.io.IOException
+    instances:
+      downstreamService:
+        baseConfig: default

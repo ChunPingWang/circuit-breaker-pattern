@@ -1,0 +1,42 @@
+plugins {
+    id 'org.springframework.boot' version '4.0.0-M1'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+}
+
+group = 'com.poc'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+ext {
+    set('springCloudVersion', '2025.0.0-M1')
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    // Spring Boot 4 starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // Spring Cloud Circuit Breaker (抽象層)
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
+
+    // WebClient for reactive HTTP calls
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+}

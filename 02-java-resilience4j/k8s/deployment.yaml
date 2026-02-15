@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r4j-circuit-breaker
+  labels:
+    app: r4j-circuit-breaker
+    poc: circuit-breaker-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: r4j-circuit-breaker
+  template:
+    metadata:
+      labels:
+        app: r4j-circuit-breaker
+    spec:
+      containers:
+        - name: app
+          image: r4j-circuit-breaker:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            limits:
+              memory: 768Mi
+              cpu: "1"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5

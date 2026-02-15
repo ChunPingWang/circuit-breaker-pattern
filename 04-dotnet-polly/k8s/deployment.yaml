@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-circuit-breaker
+  labels:
+    app: dotnet-circuit-breaker
+    poc: circuit-breaker-dotnet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dotnet-circuit-breaker
+  template:
+    metadata:
+      labels:
+        app: dotnet-circuit-breaker
+    spec:
+      containers:
+        - name: app
+          image: dotnet-circuit-breaker:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            - name: DOTNET_CLI_TELEMETRY_OPTOUT
+              value: "1"
+          resources:
+            requests:
+              memory: 384Mi
+              cpu: 500m
+            limits:
+              memory: 768Mi
+              cpu: "1"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5

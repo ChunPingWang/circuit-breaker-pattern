@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-demo
+  labels:
+    app: cb-demo
+    poc: circuit-breaker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cb-demo
+  template:
+    metadata:
+      labels:
+        app: cb-demo
+    spec:
+      containers:
+        - name: app
+          image: cb-demo-python:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
