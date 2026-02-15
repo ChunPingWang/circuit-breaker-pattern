@@ -11,13 +11,15 @@
 1. [斷路器原理](#斷路器原理)
 2. [四種實作版本比較](#四種實作版本比較)
 3. [專案結構](#專案結構)
-4. [共用元件：Flaky Service](#共用元件flaky-service)
-5. [01 - Python 手動實作](#01---python-手動實作)
-6. [02 - Java Resilience4j](#02---java-resilience4j)
-7. [03 - Spring Cloud Circuit Breaker](#03---spring-cloud-circuit-breaker)
-8. [04 - .NET Polly v8](#04---net-polly-v8)
-9. [選擇指南](#選擇指南)
-10. [架構演進路線](#架構演進路線)
+4. [本地開發](#本地開發)
+5. [測試](#測試)
+6. [共用元件：Flaky Service](#共用元件flaky-service)
+7. [01 - Python 手動實作](#01---python-手動實作)
+8. [02 - Java Resilience4j](#02---java-resilience4j)
+9. [03 - Spring Cloud Circuit Breaker](#03---spring-cloud-circuit-breaker)
+10. [04 - .NET Polly v8](#04---net-polly-v8)
+11. [選擇指南](#選擇指南)
+12. [架構演進路線](#架構演進路線)
 
 ---
 
@@ -122,28 +124,32 @@ sequenceDiagram
 circuit-breaker-pattern/
 ├── README.md
 ├── .gitignore
+├── docker-compose.yml           # 本地開發 stack（profile 機制）
+├── Makefile                     # 快捷指令
 ├── shared/
 │   └── flaky-service/           # 共用的不穩定下游服務
 │       ├── app.py
 │       ├── Dockerfile
 │       └── k8s/
 ├── 01-python-manual/            # Python 手動實作
-│   ├── app.py
+│   ├── app.py                   # HTTP 伺服器 + 呼叫下游
+│   ├── circuit_breaker.py       # CircuitBreaker class（可獨立測試）
+│   ├── tests/                   # pytest 單元測試
+│   ├── requirements-test.txt
 │   ├── Dockerfile
-│   ├── requirements.txt
 │   └── k8s/
 ├── 02-java-resilience4j/        # Spring Boot 3 + Resilience4j
 │   ├── build.gradle
-│   ├── settings.gradle
-│   ├── src/main/java/com/poc/circuitbreaker/
-│   ├── src/main/resources/
+│   ├── gradlew / gradlew.bat    # Gradle Wrapper (8.10)
+│   ├── src/main/
+│   ├── src/test/                # WireMock 整合測試
 │   ├── Dockerfile
 │   └── k8s/
 ├── 03-spring-cloud-cb/          # Spring Boot 4 + Spring Cloud CB
 │   ├── build.gradle
-│   ├── settings.gradle
-│   ├── src/main/java/com/poc/circuitbreaker/
-│   ├── src/main/resources/
+│   ├── gradlew / gradlew.bat    # Gradle Wrapper (8.12)
+│   ├── src/main/
+│   ├── src/test/                # Resilience4j + WireMock 單元測試
 │   ├── Dockerfile
 │   └── k8s/
 └── 04-dotnet-polly/             # .NET 8 + Polly v8
@@ -151,9 +157,141 @@ circuit-breaker-pattern/
     ├── Program.cs
     ├── appsettings.json
     ├── Services/
-    ├── Middleware/
+    ├── CircuitBreakerDemo.Tests/ # xUnit + WireMock.Net 測試
     ├── Dockerfile
     └── k8s/
+```
+
+---
+
+## 本地開發
+
+所有專案的下游 URL 均透過環境變數設定，預設指向 `http://localhost:8080`，無需 K8s 即可在本地開發與測試。
+
+### 環境變數
+
+| 專案 | 環境變數 | 預設值 |
+|------|---------|--------|
+| 01 Python | `DOWNSTREAM_URL` | `http://localhost:8080` |
+| 02 Java | `DOWNSTREAM_URL` | `http://localhost:8080` |
+| 03 Spring Cloud | `DOWNSTREAM_URL` | `http://localhost:8080` |
+| 04 .NET | `DownstreamUrl` | `http://localhost:8080` |
+
+### Docker Compose
+
+使用 profile 機制選擇要啟動的服務：
+
+```bash
+# 啟動全部服務（flaky-service + 四種 CB 實作）
+docker compose --profile all up --build
+
+# 只跑 Python 版
+docker compose --profile python up --build
+
+# 只跑 Java 版（02 + 03）
+docker compose --profile java up --build
+
+# 只跑 .NET 版
+docker compose --profile dotnet up --build
+
+# 只跑下游服務（本地開發用）
+docker compose up flaky-service --build
+```
+
+| 服務 | Port | Profile |
+|------|------|---------|
+| flaky-service | 8080 | (始終啟動) |
+| python-cb | 8081 | `python`, `all` |
+| java-resilience4j-cb | 8082 | `java`, `all` |
+| spring-cloud-cb | 8083 | `java`, `all` |
+| dotnet-polly-cb | 8084 | `dotnet`, `all` |
+
+### Makefile 快捷指令
+
+```bash
+make up-all        # docker compose --profile all up --build
+make up-python     # docker compose --profile python up --build
+make up-java       # docker compose --profile java up --build
+make up-dotnet     # docker compose --profile dotnet up --build
+make down          # docker compose --profile all down
+make test          # 執行所有測試
+make test-python   # 只跑 Python 測試
+make test-java-02  # 只跑 Java 02 測試
+make test-java-03  # 只跑 Java 03 測試
+make test-dotnet   # 只跑 .NET 測試
+```
+
+### 純本地開發（不用 Docker）
+
+1. 先啟動下游服務：
+   ```bash
+   cd shared/flaky-service && python app.py
+   ```
+
+2. 在另一個終端啟動任一 CB 實作：
+   ```bash
+   # Python
+   cd 01-python-manual && python app.py
+
+   # Java 02
+   cd 02-java-resilience4j && ./gradlew bootRun
+
+   # Java 03
+   cd 03-spring-cloud-cb && ./gradlew bootRun
+
+   # .NET 04
+   cd 04-dotnet-polly && dotnet run
+   ```
+
+---
+
+## 測試
+
+每個專案都包含獨立的測試，可在不啟動任何外部服務的情況下執行。
+
+### 執行所有測試
+
+```bash
+make test
+```
+
+### 各專案測試
+
+#### 01 - Python (pytest)
+
+測試 `CircuitBreaker` class 的狀態轉換邏輯（CLOSED → OPEN → HALF_OPEN → CLOSED）。
+
+```bash
+cd 01-python-manual
+python -m venv .venv && .venv/bin/pip install -r requirements-test.txt
+.venv/bin/python -m pytest tests/ -v
+```
+
+#### 02 - Java Resilience4j (Spring Boot Test + WireMock)
+
+使用 WireMock 模擬下游服務，測試斷路器在成功、失敗、OPEN、Reset 等場景的行為。
+
+```bash
+cd 02-java-resilience4j
+./gradlew test
+```
+
+#### 03 - Spring Cloud CB (Resilience4j + WireMock)
+
+直接測試 Resilience4j 斷路器邏輯搭配 WireMock，涵蓋狀態轉換與請求拒絕。
+
+```bash
+cd 03-spring-cloud-cb
+./gradlew test
+```
+
+#### 04 - .NET Polly (xUnit + WireMock.Net)
+
+使用 `WebApplicationFactory` 搭配 WireMock.Net 測試 Standard/Custom Pipeline 與 Dashboard。
+
+```bash
+cd 04-dotnet-polly
+dotnet test
 ```
 
 ---
